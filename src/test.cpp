@@ -41,11 +41,23 @@ void test_number()
     std::cerr<<"leaving test_number()\n";
 }
 
+void test_array()
+{
+    std::cerr << "entering test_array()\n";
+
+    JSON a;
+    a += JSON();
+    a += "string";
+
+    std::cerr << "leaving test_array()\n";
+}
+
 int main()
 {
     test_null();
     test_string();
     test_bool();
     test_number();
+    test_array();
     getchar();
 }

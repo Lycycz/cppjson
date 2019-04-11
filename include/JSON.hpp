@@ -40,8 +40,11 @@ public:
     JSON(const std::string&) noexcept;
     JSON(std::string &&) noexcept;
     JSON(const char *) noexcept;
-    JSON(const int) noexcept;
     JSON(const bool) noexcept;
+    JSON(const int) noexcept;
+    JSON(const double) noexcept;
+    JSON(const array_t &) noexcept;
+    JSON(array_t &&) noexcept;
 
     JSON& operator=(JSON) noexcept;
     value_type type() const noexcept;
@@ -58,7 +61,18 @@ public:
         o << j.toString();
         return o;
     }
+
+    JSON& operator+=(const JSON&);
+    JSON& operator+=(const std::string&);
+    JSON& operator+=(const char*);
+
+    void push_back(const JSON&);
+    void push_back(JSON &&);
+
 private:
-  value_type _type = value_type::null;
-  value _value{};
+    const std::string _typename() const noexcept;
+
+private:
+    value_type _type = value_type::null;
+    value _value{};
 };
