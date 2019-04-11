@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 3.0.0)
-project(CppJson VERSION 0.1.0)
+cmake_minimum_required (VERSION 3.0)
+project (JSON_test)
 
-set(SRC_LIST JSON.cpp test.cpp)
-add_executable(CppJson ${SRC_LIST})
+include_directories(include)
+#set(SOURCES src/JSON.cpp src/test.cpp)
+file(GLOB SOURCES "src/*.cpp")
+add_executable(Cpp_Json ${SOURCES})
