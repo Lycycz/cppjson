@@ -1,5 +1,0 @@
-/Users/apple/Downloads/CppJson/build/CMakeFiles/rebuild_cache.dir
-/Users/apple/Downloads/CppJson/build/CMakeFiles/edit_cache.dir
-/Users/apple/Downloads/CppJson/build/CMakeFiles/package_source.dir
-/Users/apple/Downloads/CppJson/build/CMakeFiles/package.dir
-/Users/apple/Downloads/CppJson/build/CMakeFiles/CppJson.dir
