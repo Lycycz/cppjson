@@ -7,6 +7,9 @@
 #include <string>
 #include <vector>
 
+//#define strcpy strcpy_s
+//#define strncpy strncpy_s
+
 class JSON {
 public:
   enum class value_type : uint8_t {
@@ -63,6 +66,15 @@ public:
   JSON &operator+=(const std::string &);
   JSON &operator+=(const char *);
 
+  JSON &operator[](int);
+  const JSON &operator[](const int) const;
+  JSON &operator[](const std::string &);
+  JSON &operator[](const char *);
+  const JSON &operator[](const std::string &) const;
+  bool operator==(const JSON&) const;
+  size_t size() const;
+  bool empty() const;
+
   void push_back(const JSON &);
   void push_back(JSON &&);
 
@@ -88,6 +100,13 @@ public:
     iterator(const iterator &);
     ~iterator();
 
+    iterator& operator=(const iterator&);
+    bool operator==(const iterator&) const;
+    bool operator!=(const iterator&) const;
+    iterator& operator++();
+    JSON& operator*() const;
+    JSON* operator->() const;
+
   private:
     JSON *_object;
     std::vector<JSON>::iterator *_vi;
@@ -95,24 +114,33 @@ public:
   };
 
 public:
-    iterator begin();
-    iterator end();
-    const_iterator begin() const;
-    const_iterator end() const;
-    const_iterator cbegin() const;
-    const_iterator cend() const;
+  iterator begin();
+  iterator end();
+  const_iterator begin() const;
+  const_iterator end() const;
+  const_iterator cbegin() const;
+  const_iterator cend() const;
 
 private:
-    class parser {
-    public:
-        parser(char*);
-        parser(std::string&);
-        parser(std::istream&);
-    private:
-        bool next();
+  class parser {
+  public:
+    parser(char *);
+    parser(std::string &);
+    parser(std::istream &);
+    ~parser();
+    void parse(JSON &s);
 
-        char _current;
-        char *_buffer;
-        size_t _pos;
-    };
+  private:
+    bool next();
+    void error(std::string = " ");
+    std::string parseString();
+    void parseTrue();
+    void parseFalse();
+    void parseNull();
+    void expect(char);
+
+    char _current;
+    char *_buffer;
+    size_t _pos;
+  };
 };

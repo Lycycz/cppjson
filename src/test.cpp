@@ -47,7 +47,24 @@ void test_array()
 
     JSON a;
     a += JSON();
+    a += 1;
+    a += 1.0;
+    a += true;
     a += "string";
+
+    assert(a.type() == JSON::value_type::array);
+
+    assert(a.size() == 5);
+    assert(a.empty() == false);
+
+    assert(a[1] == JSON(1));
+    assert(a[2] == JSON(1.0));
+    assert(a[3] == JSON(true));
+    assert(a[4] == JSON("string"));
+    
+    for (JSON::iterator i = a.begin(); i != a.end(); ++i) {
+        std::cerr << *i << '\n';
+    }
 
     std::cerr << "leaving test_array()\n";
 }
