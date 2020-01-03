@@ -52,6 +52,11 @@ public:
   value_type type() const noexcept;
   const std::string toString() const noexcept;
 
+  operator const std::string() const;
+  operator int() const;
+  operator double() const;
+  operator bool() const;
+
   friend std::ostream &operator<<(std::ostream &o, const JSON &j) {
     o << j.toString();
     return o;
@@ -60,6 +65,16 @@ public:
   friend std::ostream &operator>>(const JSON &j, std::ostream &o) {
     o << j.toString();
     return o;
+  }
+
+  friend std::istream &operator>>(std::istream& i, JSON& j) {
+    parser(i).parse(j);
+    return i;
+  }
+
+  friend std::istream &operator<<(JSON& j, std::istream& i) {
+    parser(i).parse(j);
+    return i;
   }
 
   JSON &operator+=(const JSON &);
@@ -71,7 +86,7 @@ public:
   JSON &operator[](const std::string &);
   JSON &operator[](const char *);
   const JSON &operator[](const std::string &) const;
-  bool operator==(const JSON&) const;
+  bool operator==(const JSON &) const;
   size_t size() const;
   bool empty() const;
 
@@ -100,17 +115,45 @@ public:
     iterator(const iterator &);
     ~iterator();
 
-    iterator& operator=(const iterator&);
-    bool operator==(const iterator&) const;
-    bool operator!=(const iterator&) const;
-    iterator& operator++();
-    JSON& operator*() const;
-    JSON* operator->() const;
+    iterator &operator=(const iterator &);
+    bool operator==(const iterator &) const;
+    bool operator!=(const iterator &) const;
+    iterator &operator++();
+    JSON &operator*() const;
+    JSON *operator->() const;
 
   private:
     JSON *_object;
     std::vector<JSON>::iterator *_vi;
     std::map<std::string, JSON>::iterator *_oi;
+  };
+  class const_iterator {
+  public:
+    const_iterator();
+    const_iterator(const JSON *);
+    const_iterator(const const_iterator &);
+    const_iterator(const iterator &);
+    ~const_iterator();
+
+    const_iterator &operator=(const const_iterator &);
+    bool operator==(const const_iterator &) const;
+    bool operator!=(const const_iterator &) const;
+    const_iterator &operator++();
+    const JSON &operator*() const;
+    const JSON *operator->() const;
+
+    /// getter for the key (in case of objects)
+    std::string key() const;
+    /// getter for the value
+    const JSON &value() const;
+
+  private:
+    /// a JSON value
+    const JSON *_object;
+    /// an iterator for JSON arrays
+    std::vector<JSON>::const_iterator *_vi;
+    /// an iterator for JSON objects
+    std::map<std::string, JSON>::const_iterator *_oi;
   };
 
 public:

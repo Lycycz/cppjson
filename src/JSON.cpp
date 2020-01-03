@@ -45,10 +45,51 @@ const std::string JSON::toString() const noexcept {
   }
   }
 }
+
 JSON &JSON::operator=(JSON o) noexcept {
   std::swap(_type, o._type);
   std::swap(_value, o._value);
   return *this;
+}
+
+JSON::operator const std::string() const {
+  switch (_type) {
+  case (value_type::string):
+    return *static_cast<std::string *>(_value.string);
+  default:
+    throw std::runtime_error("cannot cast " + _typename() + " to JSON string ");
+  }
+}
+
+JSON::operator int() const {
+  switch (_type) {
+  case value_type::number:
+    return static_cast<int>(_value.number);
+  case value_type::number_float:
+    return static_cast<int>(_value.number_float);
+  default:
+    throw std::runtime_error("cannot cast " + _typename() + " to JSON number ");
+  }
+}
+
+JSON::operator double() const {
+  switch (_type) {
+  case value_type::number:
+    return static_cast<double>(_value.number);
+  case value_type::number_float:
+    return static_cast<double>(_value.number_float);
+  default:
+    throw std::runtime_error("cannot cast " + _typename() + " to JSON number ");
+  }
+}
+
+JSON::operator bool() const {
+  switch (_type) {
+  case value_type::boolean:
+    return _value.boolean;
+  default:
+    throw std::runtime_error("cannot cast " + _typename() + " to JSON bool ");
+  }
 }
 
 JSON &JSON::operator+=(const JSON &o) {
@@ -77,7 +118,7 @@ const JSON &JSON::operator[](const int index) const {
 JSON &JSON::operator[](const std::string &key) {
   if (_type == value_type::null) {
     _type = value_type::object;
-    _payload = new std::map<std::string, JSON>;
+    _value.object = new std::map<std::string, JSON>;
   }
 
   if (_type != value_type::object) {
@@ -85,7 +126,7 @@ JSON &JSON::operator[](const std::string &key) {
                              " to " + _typename());
   }
   std::map<std::string, JSON> *object =
-      static_cast<std::map<std::string, JSON> *>(_payload);
+      static_cast<std::map<std::string, JSON> *>(_value.object);
   if (object->find(key) == object->end())
     (*object)[key] = JSON();
 
@@ -95,7 +136,7 @@ JSON &JSON::operator[](const std::string &key) {
 JSON &JSON::operator[](const char *key) {
   if (_type == value_type::null) {
     _type = value_type::object;
-    _payload = new std::map<std::string, JSON>;
+    _value.object = new std::map<std::string, JSON>;
   }
 
   if (_type != value_type::object) {
@@ -103,7 +144,7 @@ JSON &JSON::operator[](const char *key) {
                              " to " + _typename());
   }
   std::map<std::string, JSON> *object =
-      static_cast<std::map<std::string, JSON> *>(_payload);
+      static_cast<std::map<std::string, JSON> *>(_value.object);
   if (object->find(key) == object->end())
     (*object)[key] = JSON();
 
@@ -116,7 +157,7 @@ const JSON &JSON::operator[](const std::string &key) const {
                              " to " + _typename());
   }
   std::map<std::string, JSON> *object =
-      static_cast<std::map<std::string, JSON> *>(_payload);
+      static_cast<std::map<std::string, JSON> *>(_value.object);
   if (object->find(key) == object->end()) {
     throw std::runtime_error("key " + key + "not found");
   } else {
@@ -195,15 +236,15 @@ bool JSON::empty() const {
   case value_type::object:
     return static_cast<std::map<std::string, JSON> *>(_value.object)->empty();
   case value_type::null:
-    return false;
+    return true;
   case value_type::string:
-    return true;
+    return false;
   case value_type::boolean:
-    return true;
+    return false;
   case value_type::number:
-    return true;
+    return false;
   case value_type::number_float:
-    return true;
+    return false;
   }
 }
 
@@ -260,6 +301,7 @@ bool JSON::operator==(const JSON &o) const {
   }
   }
 }
+
 JSON::iterator::iterator() : _object(nullptr), _vi(nullptr), _oi(nullptr) {}
 
 JSON::iterator::iterator(JSON *j) : _object(j), _vi(nullptr), _oi(nullptr) {
@@ -357,6 +399,126 @@ JSON::iterator JSON::begin() { return JSON::iterator(this); }
 
 JSON::iterator JSON::end() { return JSON::iterator(); }
 
+JSON::const_iterator JSON::begin() const { return JSON::const_iterator(this); }
+
+JSON::const_iterator JSON::end() const { return JSON::const_iterator(); }
+
+JSON::const_iterator JSON::cbegin() const { return JSON::const_iterator(this); }
+
+JSON::const_iterator JSON::cend() const { return JSON::const_iterator(); }
+
+JSON::const_iterator::const_iterator()
+    : _object(nullptr), _vi(nullptr), _oi(nullptr) {}
+
+JSON::const_iterator::const_iterator(const JSON *j)
+    : _object(j), _vi(nullptr), _oi(nullptr) {
+  switch (_object->_type) {
+  case (value_type::array): {
+    _vi = new std::vector<JSON>::const_iterator(
+        static_cast<std::vector<JSON> *>(_object->_value.array)->begin());
+    break;
+  }
+  case (value_type::object): {
+    _oi = new std::map<std::string, JSON>::const_iterator(
+        static_cast<std::map<std::string, JSON> *>(_object->_value.object)
+            ->begin());
+    break;
+  }
+  default:
+    break;
+  }
+}
+
+JSON::const_iterator::const_iterator(const const_iterator &o)
+    : _object(o._object), _vi(nullptr), _oi(nullptr) {
+  switch (_object->_type) {
+  case (value_type::array): {
+    _vi = new std::vector<JSON>::const_iterator(
+        static_cast<std::vector<JSON> *>(_object->_value.array)->begin());
+    break;
+  }
+  case (value_type::object): {
+    _oi = new std::map<std::string, JSON>::const_iterator(
+        static_cast<std::map<std::string, JSON> *>(_object->_value.object)
+            ->begin());
+    break;
+  }
+  default:
+    break;
+  }
+}
+
+JSON::const_iterator::const_iterator(const iterator &o)
+    : _object(o._object), _vi(nullptr), _oi(nullptr) {
+  switch (_object->_type) {
+  case (value_type::array): {
+    _vi = new std::vector<JSON>::const_iterator(
+        static_cast<std::vector<JSON> *>(_object->_value.array)->begin());
+    break;
+  }
+  case (value_type::object): {
+    _oi = new std::map<std::string, JSON>::const_iterator(
+        static_cast<std::map<std::string, JSON> *>(_object->_value.object)
+            ->begin());
+    break;
+  }
+  default:
+    break;
+  }
+}
+
+JSON::const_iterator::~const_iterator() {
+  delete _vi;
+  delete _oi;
+}
+
+bool JSON::const_iterator::operator==(const const_iterator &o) const {
+  return _object == o._object;
+}
+
+bool JSON::const_iterator::operator!=(const const_iterator &o) const {
+  return _object != o._object;
+}
+
+const JSON &JSON::const_iterator::operator*() const {
+  if (_object == nullptr) {
+    throw std::runtime_error("cannot get value");
+  }
+
+  switch (_object->_type) {
+  case value_type::array:
+    return **_vi;
+  case value_type::object:
+    return (*_oi)->second;
+  default:
+    return *_object;
+  }
+}
+
+JSON::const_iterator &JSON::const_iterator::operator++() {
+  if (_object == nullptr) {
+    return *this;
+  }
+  switch (_object->_type) {
+  case value_type::array: {
+    if (++(*_vi) ==
+        static_cast<std::vector<JSON> *>(_object->_value.array)->cend())
+      _object = nullptr;
+    break;
+  }
+  case value_type::object: {
+    if (++(*_oi) ==
+        static_cast<std::map<std::string, JSON> *>(_object->_value.object)
+            ->cend())
+      _object = nullptr;
+    break;
+  }
+  default:
+    _object = nullptr;
+  }
+  return *this;
+}
+
 JSON::parser::parser(char *s) : _pos(0) {
   _buffer = new char[strlen(s) + 1];
   strcpy(_buffer, s);
@@ -371,6 +533,17 @@ JSON::parser::parser(std::string &s) : _pos(0) {
   next();
 }
 
+JSON::parser::parser(std::istream &_is) : _pos(0) {
+  _is.seekg(0, std::ios::end);
+  std::streampos length = _is.tellg();
+  _is.seekg(0, std::ios::beg);
+
+  _buffer = new char[length];
+  _is.read(_buffer, length);
+
+  next();
+}
+
 JSON::parser::~parser() { delete[] _buffer; }
 
 void JSON::parser::error(std::string msg) {
@@ -380,9 +553,6 @@ void JSON::parser::error(std::string msg) {
 
 bool JSON::parser::next() {
   _current = _buffer[_pos++];
-  if (_buffer == nullptr) {
-    return false;
-  }
 
   while (std::isspace(_current)) {
     _current = _buffer[_pos++];
@@ -392,19 +562,29 @@ bool JSON::parser::next() {
 }
 
 std::string JSON::parser::parseString() {
-  const char *p = strchr(_buffer + _pos, '\"');
+  char *p = strchr(_buffer + _pos, '\"');
 
   if (!p) {
     error("expect '\"'");
   }
 
-  size_t length = p - _buffer - _pos;
+  while (p != nullptr and *(p - 1) == '\\') {
+      // length of the string so far
+      const size_t length = p - _buffer - _pos;
+      // continue checking after escaped quote
+      p = strchr(_buffer + _pos + length + 1, '\"');
+  }
+
+  const size_t length = p - _buffer - _pos;
   char *tmp = new char[length + 1];
   strncpy(tmp, _buffer + _pos, length);
   std::string result(tmp);
-  delete[] tmp;
+  delete [] tmp;
+
+  _pos += length + 1;
 
   next();
+
   return result;
 }
 
@@ -445,6 +625,8 @@ void JSON::parser::expect(char c) {
     msg += "'";
     error(msg.c_str());
   } else {
+      // std::cout << _buffer[15] << std::endl;
+      std::cout << _buffer[_pos] << std::endl;
     next();
   }
 }
@@ -471,6 +653,7 @@ void JSON::parser::parse(JSON &result) {
     }
 
     expect('}');
+
     break;
   }
   case ('['): {
