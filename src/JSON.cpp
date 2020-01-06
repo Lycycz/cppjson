@@ -1,31 +1,89 @@
 #include "JSON.hpp"
 #include <iostream>
 
-JSON::JSON(const std::string &s) noexcept : _type(value_type::string) {
-  _value.string = new string_t(s);
+JSON::value::value(array_t* _array): array(_array) {}
+JSON::value::value(object_t* _object): object(_object) {}
+JSON::value::value(string_t* _string): string(_string) {}
+JSON::value::value(boolean_t _boolean): boolean(_boolean) {}
+JSON::value::value(number_t _number): number(_number) {}
+JSON::value::value(number_float_t _number_float): number_float(_number_float) {}
+JSON::JSON(const value_type t) noexcept 
+  : _type(t) {
+  switch (_type) {
+    case (value_type::array):
+    {
+      _value.array = new array_t();
+      break;
+    }
+    case (value_type::object):
+    {
+      _value.object = new object_t();
+      break;
+    }
+    case (value_type::string):
+    {
+      _value.string = new string_t();
+      break;
+    }
+    case (value_type::boolean):
+    {
+      _value.boolean = boolean_t();
+      break;
+    }
+    case (value_type::number):
+    {
+      _value.number = number_t();
+      break;
+    }
+    case (value_type::number_float):
+    {
+      _value.number_float = number_float_t();
+      break;
+    }
+    case (value_type::null):
+    {
+      break;
+    }
+  }    
 }
-JSON::JSON(std::string &&s) noexcept : _type(value_type::string) {
-  _value.string = new string_t(std::move(s));
+
+JSON::JSON(std::nullptr_t) noexcept : JSON()
+{}
+
+JSON::JSON(const std::string &s) noexcept 
+  : _type(value_type::string), _value(new string_t(s)) {
 }
-JSON::JSON(const char *s) noexcept : _type(value_type::string) {
-  _value.string = new string_t(s);
+
+JSON::JSON(std::string &&s) noexcept 
+  : _type(value_type::string), _value(new string_t(std::move(s))) {
 }
-JSON::JSON(const bool b) noexcept : _type(value_type::boolean) {
-  _value.boolean = b;
+
+JSON::JSON(const char *s) noexcept 
+  : _type(value_type::string), _value(new string_t(s)) {
 }
-JSON::JSON(const int i) noexcept : _type(value_type::number) {
-  _value.number = i;
+
+JSON::JSON(const bool b) noexcept 
+  : _type(value_type::boolean), _value(b) {
 }
-JSON::JSON(const double f) noexcept : _type(value_type::number_float) {
-  _value.number_float = f;
+
+JSON::JSON(const int i) noexcept 
+  : _type(value_type::number), _value(i) {
 }
-JSON::JSON(const array_t &a) noexcept : _type(value_type::array) {
-  _value.array = new array_t(a);
+
+JSON::JSON(const double f) noexcept 
+  : _type(value_type::number_float), _value(f) {
 }
-JSON::JSON(array_t &&a) noexcept : _type(value_type::array) {
-  _value.array = new array_t(std::move(a));
+
+JSON::JSON(const array_t &a) noexcept 
+  : _type(value_type::array), _value(new array_t(a)) {
 }
+
+JSON::JSON(array_t &&a) noexcept 
+  : _type(value_type::array), _value(new array_t(std::move(a))) {
+}
+
 JSON::value_type JSON::type() const noexcept { return _type; }
+
 const std::string JSON::toString() const noexcept {
   switch (_type) {
   case value_type::null: {
@@ -42,6 +100,27 @@ const std::string JSON::toString() const noexcept {
   }
   case value_type::boolean: {
     return _value.boolean ? "true" : "false";
+  }
+  case value_type::array: {
+    std::string result;
+    for (array_t::const_iterator i = _value.array->begin();
+         i != _value.array->end(); i++) {
+      if (i != _value.array->begin())
+        result += ", ";
+      result += i->toString();
+    }
+
+    return "[" + result + "]";
+  }
+  case value_type::object: {
+    std::string result;
+    for (object_t::const_iterator i = _value.object->begin();
+         i != _value.object->end(); i++) {
+      if (i != _value.object->begin())
+        result += ", ";
+      result += "\"" + i->first + "\": " + i->second.toString();
+    }
+    return "{" + result + "}";
   }
   }
 }
@@ -159,10 +238,38 @@ const JSON &JSON::operator[](const std::string &key) const {
   std::map<std::string, JSON> *object =
       static_cast<std::map<std::string, JSON> *>(_value.object);
   if (object->find(key) == object->end()) {
-    throw std::runtime_error("key " + key + "not found");
+    throw std::out_of_range("key " + key + "not found");
   } else {
     return object->find(key)->second;
   }
+}
+
+JSON &JSON::at(const std::string &key) {
+  return at(key.c_str());
+}
+
+JSON &JSON::at(const char *key) {
+  if (_type != value_type::object) {
+    throw std::logic_error("cannot add entry with key " + std::string(key) +
+                             " to " + _typename());
+  }
+  return _value.object->at(key);
+}
+
+const JSON &JSON::at(const std::string &key) const {
+  if (_type != value_type::object) {
+    throw std::logic_error("cannot get entry with key " + std::string(key) +
+                             " to " + _typename());
+  }
+  return _value.object->at(key);
+}
+
+JSON::value JSON::data() noexcept {
+  return _value;
+}
+
+const JSON::value JSON::data() const noexcept {
+  return _value;
 }
 
 void JSON::push_back(const JSON &o) {
@@ -521,26 +628,29 @@ JSON::const_iterator &JSON::const_iterator::operator++() {
 
 JSON::parser::parser(char *s) : _pos(0) {
   _buffer = new char[strlen(s) + 1];
-  strcpy(_buffer, s);
+  _length = std::strlen(s);
+  strcpy_s(_buffer, _length + 1, s);
+  // strcpy(_buffer, s);
 
   next();
 }
 
 JSON::parser::parser(std::string &s) : _pos(0) {
   _buffer = new char[s.length() + 1];
-  strcpy(_buffer, s.c_str());
+  _length = s.length();
+  strcpy_s(_buffer, _length + 1, s.c_str());
+  // strcpy(_buffer, s.c_str());
 
   next();
 }
 
 JSON::parser::parser(std::istream &_is) : _pos(0) {
   _is.seekg(0, std::ios::end);
-  std::streampos length = _is.tellg();
+  _length = _is.tellg();
   _is.seekg(0, std::ios::beg);
 
-  _buffer = new char[length];
-  _is.read(_buffer, length);
-
+  _buffer = new char[_length];
+  _is.read(_buffer, _length);
   next();
 }
 
@@ -552,9 +662,15 @@ void JSON::parser::error(std::string msg) {
 }
 
 bool JSON::parser::next() {
+  if (_pos == _length) {
+    return false;
+  }
   _current = _buffer[_pos++];
 
   while (std::isspace(_current)) {
+    if (_pos == _length) {
+      return false;
+    }
     _current = _buffer[_pos++];
   }
 
@@ -564,22 +680,19 @@ bool JSON::parser::next() {
 std::string JSON::parser::parseString() {
   char *p = strchr(_buffer + _pos, '\"');
 
-  if (!p) {
+  while (p != nullptr and *(p - 1) == '\\') {
+    // length of the string so far
+    const size_t length = p - _buffer - _pos;
+    // continue checking after escaped quote
+    p = strchr(_buffer + _pos + length + 1, '\"');
+  }
+
+  if (p == nullptr) {
     error("expect '\"'");
   }
 
-  while (p != nullptr and *(p - 1) == '\\') {
-      // length of the string so far
-      const size_t length = p - _buffer - _pos;
-      // continue checking after escaped quote
-      p = strchr(_buffer + _pos + length + 1, '\"');
-  }
-
   const size_t length = p - _buffer - _pos;
-  char *tmp = new char[length + 1];
-  strncpy(tmp, _buffer + _pos, length);
-  std::string result(tmp);
-  delete [] tmp;
+  std::string result(_buffer + _pos, length);
 
   _pos += length + 1;
 
@@ -625,8 +738,6 @@ void JSON::parser::expect(char c) {
     msg += "'";
     error(msg.c_str());
   } else {
-      // std::cout << _buffer[15] << std::endl;
-      std::cout << _buffer[_pos] << std::endl;
     next();
   }
 }
@@ -674,25 +785,54 @@ void JSON::parser::parse(JSON &result) {
   }
   case ('\"'): {
     result._type = value_type::string;
-    result._value.string = new std::string(parser::parseString());
+    result._value.string = new string_t(std::move(parseString()));
     break;
   }
   case ('t'): {
     parseTrue();
     result._type = value_type::boolean;
-    result._value.boolean = new bool(true);
+    result._value.boolean = true;
     break;
   }
   case ('f'): {
     parseFalse();
     result._type = value_type::boolean;
-    result._value.boolean = new bool(false);
+    result._value.boolean = false;
     break;
   }
   case ('n'): {
     parseNull();
     // result._type = value_type::null;
     break;
+  }
+  default: {
+    if (std::isdigit(_current) || _current == '-') {
+      std::string tmp;
+      do {
+        tmp += _current;
+      } while (next() &&
+               (std::isdigit(_current) || _current == '.' || _current == 'e' ||
+                _current == 'E' || _current == '+' || _current == '-'));
+      try {
+        const auto float_val = std::stod(tmp);
+        const auto int_val = static_cast<int>(float_val);
+
+        if (float_val == int_val) {
+          result._type = value_type::number;
+          result._value.number = int_val;
+        } else {
+          result._type = value_type::number_float;
+          result._value.number_float = float_val;
+        }
+      } catch (...) {
+        error("error while translating " + tmp + " to number");
+      }
+
+      break;
+
+    } else {
+      error("unexpected character");
+    }
   }
   }
 }

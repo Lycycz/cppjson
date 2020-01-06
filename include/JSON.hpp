@@ -12,6 +12,8 @@
 
 class JSON {
 public:
+  class iterator;
+  class const_iterator;
   enum class value_type : uint8_t {
     array = 0,
     object,
@@ -35,10 +37,19 @@ public:
     boolean_t boolean;
     number_t number;
     number_float_t number_float;
+    value() = default;
+    value(array_t*);
+    value(object_t*);
+    value(string_t*);
+    value(boolean_t);
+    value(number_t);
+    value(number_float_t);
   };
 
 public:
+  JSON(const value_type) noexcept;
   JSON() = default;
+  JSON(std::nullptr_t) noexcept;
   JSON(const std::string &) noexcept;
   JSON(std::string &&) noexcept;
   JSON(const char *) noexcept;
@@ -77,6 +88,7 @@ public:
     return i;
   }
 
+  bool operator==(const JSON &) const;
   JSON &operator+=(const JSON &);
   JSON &operator+=(const std::string &);
   JSON &operator+=(const char *);
@@ -86,7 +98,11 @@ public:
   JSON &operator[](const std::string &);
   JSON &operator[](const char *);
   const JSON &operator[](const std::string &) const;
-  bool operator==(const JSON &) const;
+  inline JSON& at(const std::string&);
+  JSON& at(const char*);
+  const JSON& at(const std::string&) const;
+  value data() noexcept;
+  const value data() const noexcept;
   size_t size() const;
   bool empty() const;
 
@@ -100,13 +116,9 @@ private:
   value_type _type = value_type::null;
   value _value{};
 
-  void *_payload;
-
-public:
-  class const_iterator;
-
 public:
   class iterator {
+    friend class JSON;
     friend class JSON::const_iterator;
 
   public:
@@ -123,11 +135,12 @@ public:
     JSON *operator->() const;
 
   private:
-    JSON *_object;
-    std::vector<JSON>::iterator *_vi;
-    std::map<std::string, JSON>::iterator *_oi;
+    JSON *_object = nullptr;
+    std::vector<JSON>::iterator *_vi = nullptr;
+    std::map<std::string, JSON>::iterator *_oi = nullptr;
   };
   class const_iterator {
+    friend class JSON;
   public:
     const_iterator();
     const_iterator(const JSON *);
@@ -149,11 +162,11 @@ public:
 
   private:
     /// a JSON value
-    const JSON *_object;
+    const JSON *_object = nullptr;
     /// an iterator for JSON arrays
-    std::vector<JSON>::const_iterator *_vi;
+    std::vector<JSON>::const_iterator *_vi = nullptr;
     /// an iterator for JSON objects
-    std::map<std::string, JSON>::const_iterator *_oi;
+    std::map<std::string, JSON>::const_iterator *_oi = nullptr;
   };
 
 public:
@@ -182,8 +195,9 @@ private:
     void parseNull();
     void expect(char);
 
-    char _current;
-    char *_buffer;
-    size_t _pos;
+    char _current {};
+    char* _buffer { nullptr };
+    size_t _length {};
+    size_t _pos = 0;
   };
 };

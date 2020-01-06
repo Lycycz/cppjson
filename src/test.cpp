@@ -101,13 +101,29 @@ void test_array()
 
 void test_streaming() {
     std::stringstream i;
-    i << "{ \"foo\": false } ";
+
+    i << "{ \"foo\": false, \"baz\": [1,2,3,4] }";
 
     {
         JSON j,k;
         i >> j;
-        // k << i;
-        // assert(j.toString() == k.toString());
+        k << i;
+        assert(j.toString() == k.toString());
+    }
+
+    {
+        std::stringstream number_stream;
+        number_stream << "[0, -1, 1, 1.0, -1.0, 1.0e+1, 1.0e-1, 1.0E+1, 1.0E-1, -1.2345678e-12]";
+        JSON j;
+        j << number_stream;
+        std::cout << j.toString() << std::endl;
+    }
+
+    {
+        std::stringstream unicode_stream;
+        unicode_stream << "[\"öäüÖÄÜß\", \"ÀÁÂÃĀĂȦ\", \"★☆→➠♥︎♦︎☁︎\"]";
+        JSON j;
+        j << unicode_stream;
         std::cout << j.toString() << std::endl;
     }
 }
