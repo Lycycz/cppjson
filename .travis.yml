@@ -2,6 +2,26 @@ language: cpp
 
 compiler:
   - gcc
+os:
+  - linux
+env:
+- BUILD_TYPE=Debug
+- BUILD_TYPE=RelWithDebInfo
+
+addons:
+  apt:
+  sources:
+      - ubuntu-toolchain-r-test
+  packages:
+      - g++-9
+      - gcc-9
+
+install:
+- if [ "$CXX" = "g++" ]; then export CXX="g++-9" CC="gcc-9"; fi
+- echo ${CC}
+- echo ${CXX}
+- ${CXX} --version
+- cmake --version
 
 before_script:
   # create a build folder for the out-of-source build
