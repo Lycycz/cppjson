@@ -629,8 +629,8 @@ JSON::const_iterator &JSON::const_iterator::operator++() {
 JSON::parser::parser(char *s) : _pos(0) {
   _buffer = new char[strlen(s) + 1];
   _length = std::strlen(s);
-  strcpy_s(_buffer, _length + 1, s);
-  // strcpy(_buffer, s);
+  //strcpy_s(_buffer, _length + 1, s);
+  strcpy(_buffer, s);
 
   next();
 }
@@ -638,8 +638,8 @@ JSON::parser::parser(char *s) : _pos(0) {
 JSON::parser::parser(std::string &s) : _pos(0) {
   _buffer = new char[s.length() + 1];
   _length = s.length();
-  strcpy_s(_buffer, _length + 1, s.c_str());
-  // strcpy(_buffer, s.c_str());
+  //strcpy_s(_buffer, _length + 1, s.c_str());
+  strcpy(_buffer, s.c_str());
 
   next();
 }
