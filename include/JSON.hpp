@@ -4,7 +4,7 @@
 #include <initializer_list>
 #include <iostream>
 #include <map>
-#include <string>
+#include <cstring>
 #include <vector>
 
 //#define strcpy strcpy_s
